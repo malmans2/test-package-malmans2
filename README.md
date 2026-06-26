@@ -83,6 +83,16 @@ To run all quality checks, tests, and build steps in a single sequence, use the 
 make all
 ```
 
+## Instructions for PyPI
+
+Publishing to PyPI is done using a Trusted Publisher. See the [PyPI documentation](https://docs.pypi.org/trusted-publishers/adding-a-publisher/).
+Configure the Trusted Publisher with the following settings:
+
+- **Owner**: `ecmwf`
+- **Repository name**: `test-package-malmans2`
+- **Workflow name**: `on-release.yml`
+- **Environment name**: `pypi`
+
 ## Instructions for GitHub Pages
 
 1. Go to **Settings → Pages**, then set **Source** to **GitHub Actions**.
