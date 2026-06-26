@@ -1,0 +1,189 @@
+name: On-push
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - main
+    - upstream
+  pull_request:
+    branches:
+    - main
+    - upstream
+
+permissions:
+  contents: read
+
+env:
+  INTERNAL_DEPENDENCIES: ''
+  TARGET_BRANCH: ${{ github.base_ref || github.ref_name }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    name: Quality Assurance
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: ${{ github.repository }}
+        persist-credentials: false
+    - name: Clone internal dependencies
+      if: ${{ env.INTERNAL_DEPENDENCIES != '' }}
+      uses: bopen/ci-cd/git-clone@16f4e994b7dcd8d0abc40bc24a3a8842a678ae00 # v1.1
+      with:
+        repo-list: ${{ env.INTERNAL_DEPENDENCIES }}
+        git-pat: ${{ secrets.GH_REPO_READ_TOKEN }}
+        default-repo-ref: ${{ env.TARGET_BRANCH }}
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+    - name: Run code quality tools
+      working-directory: ${{ github.repository }}
+      run: make qa
+
+  unit-tests:
+    name: Unit Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: ${{ github.repository }}
+        persist-credentials: false
+    - name: Clone internal dependencies
+      if: ${{ env.INTERNAL_DEPENDENCIES != '' }}
+      uses: bopen/ci-cd/git-clone@16f4e994b7dcd8d0abc40bc24a3a8842a678ae00 # v1.1
+      with:
+        repo-list: ${{ env.INTERNAL_DEPENDENCIES }}
+        git-pat: ${{ secrets.GH_REPO_READ_TOKEN }}
+        default-repo-ref: ${{ env.TARGET_BRANCH }}
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+    - name: Test the code with pytest
+      working-directory: ${{ github.repository }}
+      run: make unit-tests PYTHON_VERSION=${{ matrix.python-version }}
+
+  type-check:
+    name: Type Check
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: ${{ github.repository }}
+        persist-credentials: false
+    - name: Clone internal dependencies
+      if: ${{ env.INTERNAL_DEPENDENCIES != '' }}
+      uses: bopen/ci-cd/git-clone@16f4e994b7dcd8d0abc40bc24a3a8842a678ae00 # v1.1
+      with:
+        repo-list: ${{ env.INTERNAL_DEPENDENCIES }}
+        git-pat: ${{ secrets.GH_REPO_READ_TOKEN }}
+        default-repo-ref: ${{ env.TARGET_BRANCH }}
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+    - name: Static type checking with mypy
+      working-directory: ${{ github.repository }}
+      run: make type-check
+
+  docs-build:
+    name: Build Documentation
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: ${{ github.repository }}
+        persist-credentials: false
+    - name: Clone internal dependencies
+      if: ${{ env.INTERNAL_DEPENDENCIES != '' }}
+      uses: bopen/ci-cd/git-clone@16f4e994b7dcd8d0abc40bc24a3a8842a678ae00 # v1.1
+      with:
+        repo-list: ${{ env.INTERNAL_DEPENDENCIES }}
+        git-pat: ${{ secrets.GH_REPO_READ_TOKEN }}
+        default-repo-ref: ${{ env.TARGET_BRANCH }}
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+    - name: Build the Sphinx documentation
+      working-directory: ${{ github.repository }}
+      run: make docs-build
+
+  build:
+    name: Build Distribution
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: ${{ github.repository }}
+        persist-credentials: false
+    - name: Clone internal dependencies
+      if: ${{ env.INTERNAL_DEPENDENCIES != '' }}
+      uses: bopen/ci-cd/git-clone@16f4e994b7dcd8d0abc40bc24a3a8842a678ae00 # v1.1
+      with:
+        repo-list: ${{ env.INTERNAL_DEPENDENCIES }}
+        git-pat: ${{ secrets.GH_REPO_READ_TOKEN }}
+        default-repo-ref: ${{ env.TARGET_BRANCH }}
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+    - name: Building the package and verify import
+      working-directory: ${{ github.repository }}
+      run: make build
+
+  minver-tests:
+    name: Minimum Version Tests (Python ${{ matrix.python-version }})
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: ${{ github.repository }}
+        persist-credentials: false
+    - name: Clone internal dependencies
+      if: ${{ env.INTERNAL_DEPENDENCIES != '' }}
+      uses: bopen/ci-cd/git-clone@16f4e994b7dcd8d0abc40bc24a3a8842a678ae00 # v1.1
+      with:
+        repo-list: ${{ env.INTERNAL_DEPENDENCIES }}
+        git-pat: ${{ secrets.GH_REPO_READ_TOKEN }}
+        default-repo-ref: ${{ env.TARGET_BRANCH }}
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+    - name: Test minimum versions with pytest
+      working-directory: ${{ github.repository }}
+      run: make minver-tests PYTHON_VERSION=${{ matrix.python-version }}
+
+  integration-tests:
+    name: Integration Tests (Python ${{ matrix.python-version }})
+    needs: [unit-tests]
+    if: 'false' # Enable/disable integration tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: ${{ github.repository }}
+        persist-credentials: false
+    - name: Clone internal dependencies
+      if: ${{ env.INTERNAL_DEPENDENCIES != '' }}
+      uses: bopen/ci-cd/git-clone@16f4e994b7dcd8d0abc40bc24a3a8842a678ae00 # v1.1
+      with:
+        repo-list: ${{ env.INTERNAL_DEPENDENCIES }}
+        git-pat: ${{ secrets.GH_REPO_READ_TOKEN }}
+        default-repo-ref: ${{ env.TARGET_BRANCH }}
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+    - name: Run integration tests with pytest
+      working-directory: ${{ github.repository }}
+      run: make integration-tests PYTHON_VERSION=${{ matrix.python-version }}

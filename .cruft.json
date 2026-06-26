@@ -1,0 +1,20 @@
+{
+  "template": "git@github.com:malmans2/dss-cookiecutter-pypackage.git",
+  "commit": "ce620e45bfaebc9c5eebd3f6e12ef6c12b7291e4",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "test-package-malmans2",
+      "project_slug": "test_package_malmans2",
+      "project_short_description": "Test package malmans2",
+      "copyright_holder": "Mattia Almansi",
+      "copyright_year": "2026",
+      "integration_tests": false,
+      "pypi": true,
+      "gh_pages": false,
+      "_template": "git@github.com:malmans2/dss-cookiecutter-pypackage.git",
+      "_commit": "ce620e45bfaebc9c5eebd3f6e12ef6c12b7291e4"
+    }
+  },
+  "directory": null
+}

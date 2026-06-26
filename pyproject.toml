@@ -1,0 +1,96 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=80", "setuptools-scm>=8"]
+
+[dependency-groups]
+dev = [
+  {include-group = "docs-build"},
+  {include-group = "qa"},
+  {include-group = "type-check"},
+  {include-group = "unit-tests"}
+]
+docs-build = [
+  "myst-parser>=5.1.0",
+  "pydata-sphinx-theme>=0.19.0",
+  "sphinx>=9.0.4",
+  "sphinx-autoapi>=3.8.0"
+]
+integration-tests = [
+  {include-group = "unit-tests"}
+]
+qa = [
+  "pre-commit>=4.6.0",
+  "ruff>=0.15.19"
+]
+type-check = [
+  "mypy>=2.1.0"
+]
+unit-tests = [
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0"
+]
+
+[project]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering"
+]
+dependencies = []
+description = "Test package malmans2"
+dynamic = ["version"]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+name = "test-package-malmans2"
+readme = "README.md"
+requires-python = ">= 3.11"
+
+[tool.coverage.run]
+branch = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+# Same as Black.
+indent-width = 4
+line-length = 88
+
+[tool.ruff.lint]
+ignore = [
+  # pydocstyle: Missing Docstrings
+  "D1"
+]
+select = [
+  # pyflakes
+  "F",
+  # pycodestyle
+  "E",
+  "W",
+  # isort
+  "I",
+  # pydocstyle
+  "D"
+]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 110
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.setuptools]
+packages = ["test_package_malmans2"]
+
+[tool.setuptools_scm]
+fallback_version = "999"
+write_to = "test_package_malmans2/version.py"
+write_to_template = '''
+# Do not change! Do not track in version control!
+__version__ = "{version}"
+'''
